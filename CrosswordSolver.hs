@@ -73,6 +73,10 @@ search :: [[Char]] -> [[(Char,b)]] -> [[(Char,b)]]
 search [] _ = []
 search (x:xs) board = searchWord x board ++ search xs board
 
+reduceSame :: Eq b => [[(Char,b)]] -> [[(Char,b)]] -> [Char] 
+reduceSame [] _ = []
+reduceSame boardrows foundchars =  firsts ((concat boardrows) \\ (concat foundchars))
+
 main = do
   putStrLn "Welcome to CrosswordSolver"
 
@@ -97,8 +101,11 @@ main = do
   let boardReversedCols = getReversedCols boardCols
   let boardDiagonals = getBoardDiagonalsInit boardRows boardCols boardRowsCount boardColumnsCount ++ getBoardDiagonalsInit boardReversedRows boardReversedCols boardRowsCount boardColumnsCount
   -- do wypisania przekatnych
-  mapM_ print boardDiagonals
   let boardAll = boardRows ++ boardCols ++ boardDiagonals
   let found = filter (not . null) (search wordsTab boardAll)
-  print found
   putStrLn "Result:"
+  -- boardRows ma elementy trzymane wierszami, nie trzeba sortować
+  print (reduceSame boardRows found)
+  
+  
+  
