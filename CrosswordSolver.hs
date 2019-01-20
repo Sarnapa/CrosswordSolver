@@ -28,6 +28,7 @@ getBoardColumn :: [[(Char, Pos)]] -> Int -> [(Char, Pos)]
 getBoardColumn [] _ = []
 getBoardColumn (row:rows) colIdx = (row !! colIdx) : getBoardColumn rows colIdx
 
+
 getBoardColumns :: [[(Char, Pos)]] -> Int -> Int -> [[(Char, Pos)]]
 getBoardColumns rows colIdx colsCount =
   if colIdx /= colsCount then
@@ -35,9 +36,13 @@ getBoardColumns rows colIdx colsCount =
   else
     []
 
+
 -- Plansza jako zbiór kolumn
 getBoardColumnsInit :: [[(Char, Pos)]] -> Int -> [[(Char, Pos)]]
 getBoardColumnsInit rows colsCount = getBoardColumns rows 0 colsCount
+
+getBoardColumns2 :: [[(Char, Pos)]] -> [[(Char, Pos)]]
+getBoardColumns2 rows = transpose rows
 
 getBoardDiagonal :: [[(Char, Pos)]] -> Int -> Int -> [(Char, Pos)]
 getBoardDiagonal [] _ _ = []
@@ -90,17 +95,21 @@ reduceToText boardrows foundchars =  firsts ((concat boardrows) \\ foundchars)
 
 --Zamien znak-pole jesli na liscie
 reduceMarkedInRowHelp1 :: [(Char, Pos)] -> (Char, Pos) -> (Char, Pos)
+reduceMarkedInRowHelp1 [] char = char
 reduceMarkedInRowHelp1 charsToReplace char = case find (==char) charsToReplace of
         Just (c, bb) -> ('░', bb)
         Nothing -> char
 
 --podmień w jednym rzędzie
 reduceMarkedInRow :: [(Char, Pos)] -> [(Char, Pos)] -> [(Char, Pos)] 
-reduceMarkedInRow [] _ = []
+reduceMarkedInRow _ [] = []
+reduceMarkedInRow [] maprow = maprow
 reduceMarkedInRow foundchars maprow = map (reduceMarkedInRowHelp1 foundchars) maprow
 
 --podmien w całej planszy
 reduceMarkedInBoard :: [(Char, Pos)] -> [[(Char, Pos)]] -> [[(Char, Pos)]] 
+reduceMarkedInBoard _ [] = []
+reduceMarkedInBoard [] maprows = maprows
 reduceMarkedInBoard foundchars maprows = map (reduceMarkedInRow foundchars) maprows
 
 printDotsInit :: Int -> [Char]
@@ -124,10 +133,25 @@ printBoard (row:rows) = printBoard [row] ++ printBoard rows
 printBoardRow :: [Char] -> [Char]
 printBoardRow [c] =  "│" ++ [c] ++ "│"
 printBoardRow (c:cs) =  "│" ++ [c] ++ printBoardRow cs
+printBoardRow [] =  "ss"
+
 
 deduplicate :: Eq a => [a] -> [a]
 deduplicate []       = []
 deduplicate (x : xs) = x : deduplicate (filter (x /=) xs)
+
+
+{-
+checkIfDataCorrect_ :: [String] -> 
+checkIfDataCorrect_ (s:ss) = (length(s) == (checkIfDataCorrect_ ss))
+-}
+
+checkIfDataCorrect :: String -> Bool
+checkIfDataCorrect str =  if length (deduplicate (map length (lines str))) /= 1 
+                             then False
+                             else True
+
+                          
 
 
 
@@ -139,17 +163,21 @@ main = do
   wordsFile <- readFile wordsFileName
   boardFile <- readFile boardFileName
 
+  putStrLn "Czy dane są poprawne?"
+  let correct = checkIfDataCorrect boardFile 
+  print (if correct /= True then error "Otóż nie." else "Owszem.")
+
   putStrLn "Given words:"
   putStrLn wordsFile
   putStrLn ""
-
 
   let wordsTab = lines wordsFile
   let boardRows = getBoardRowsInit boardFile
   let boardRowsCount = length(boardRows)
   let boardColumnsCount = length(boardRows !! 0)
-  let boardCols = getBoardColumnsInit boardRows boardColumnsCount
-
+--  let boardCols = getBoardColumnsInit boardRows boardColumnsCount
+  let boardCols = getBoardColumns2 boardRows
+  
   let boardReversedRows = reverse boardRows
   let boardReversedCols = getReversedCols boardCols
   let boardDiagonals = getBoardDiagonalsInit boardRows boardCols boardRowsCount boardColumnsCount ++ getBoardDiagonalsInit boardReversedRows boardReversedCols boardRowsCount boardColumnsCount
@@ -160,7 +188,7 @@ main = do
   let markedFields_ = filter (not . null) (search wordsTab boardAll) -- zakreslone pola
 
   let markedFields = deduplicate (concat markedFields_) -- lista zakreślonych pół redukcja sublist, po deduplikacji w celu zwiększenia wydajności
- 
+  
   putStrLn "Given board:"
   putStrLn (printBoardInit boardRows)
   
