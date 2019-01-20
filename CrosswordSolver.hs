@@ -1,6 +1,14 @@
 import System.Environment
 import Data.List
 
+{-
+Michał Piotrak
+Paweł Piotrowski
+Jędrzej Kalisiak
+-}
+
+
+
 -- Pozycja na planszy
 type Pos = (Int, Int)
 
@@ -73,9 +81,55 @@ search :: [[Char]] -> [[(Char,b)]] -> [[(Char,b)]]
 search [] _ = []
 search (x:xs) board = searchWord x board ++ search xs board
 
-reduceSame :: Eq b => [[(Char,b)]] -> [[(Char,b)]] -> [Char] 
-reduceSame [] _ = []
-reduceSame boardrows foundchars =  firsts ((concat boardrows) \\ (concat foundchars))
+-- Wyszukiwanie zakreślonych pół, zastępywanie ich domyślnym znaczkiem
+{-
+reduceMarked :: Eq b => [[(Char,b)]] -> [[(Char,b)]] -> [Char] 
+reduceMarked [] _ = []
+reduceMarked boardrows foundchars =  firsts ((concat boardrows) \\ (concat foundchars))
+-}
+
+--Zamien znak-pole jesli na liscie
+reduceMarkedInRowHelp1 :: [(Char, Pos)] -> (Char, Pos) -> (Char, Pos)
+reduceMarkedInRowHelp1 charsToReplace char = case find (==char) charsToReplace of
+        Just (c, bb) -> ('░', bb)
+        Nothing -> char
+
+--podmień w jednym rzędzie
+reduceMarkedInRow :: [(Char, Pos)] -> [(Char, Pos)] -> [(Char, Pos)] 
+reduceMarkedInRow [] _ = []
+reduceMarkedInRow foundchars maprow = map (reduceMarkedInRowHelp1 foundchars) maprow
+
+--podmien w całej planszy
+reduceMarkedInBoard :: [(Char, Pos)] -> [[(Char, Pos)]] -> [[(Char, Pos)]] 
+reduceMarkedInBoard foundchars maprows = map (reduceMarkedInRow foundchars) maprows
+
+printDotsInit :: Int -> [Char]
+printDotsInit n
+                | n<=0 = []
+                | otherwise = "├─" ++ printDots (n-1)
+
+printDots :: Int -> [Char]
+printDots n 
+            | n==0 = "┤"
+            | otherwise ="┼─" ++ printDots (n-1)
+
+printBoardInit :: [[(Char, Pos)]] -> [Char]
+printBoardInit [] = []
+printBoardInit rows = printDotsInit (length (head rows)) ++ ['\n'] ++ printBoard (map firsts rows)
+
+printBoard :: [[Char]] -> [Char]
+printBoard [row] = printBoardRow row ++ ['\n'] ++ printDotsInit (length row) ++ ['\n'] 
+printBoard (row:rows) = printBoard [row] ++ printBoard rows
+
+printBoardRow :: [Char] -> [Char]
+printBoardRow [c] =  "│" ++ [c] ++ "│"
+printBoardRow (c:cs) =  "│" ++ [c] ++ printBoardRow cs
+
+deduplicate :: Eq a => [a] -> [a]
+deduplicate []       = []
+deduplicate (x : xs) = x : deduplicate (filter (x /=) xs)
+
+
 
 main = do
   putStrLn "Welcome to CrosswordSolver"
@@ -88,8 +142,7 @@ main = do
   putStrLn "Given words:"
   putStrLn wordsFile
   putStrLn ""
-  putStrLn "Given board:"
-  putStrLn boardFile
+
 
   let wordsTab = lines wordsFile
   let boardRows = getBoardRowsInit boardFile
@@ -102,10 +155,15 @@ main = do
   let boardDiagonals = getBoardDiagonalsInit boardRows boardCols boardRowsCount boardColumnsCount ++ getBoardDiagonalsInit boardReversedRows boardReversedCols boardRowsCount boardColumnsCount
   -- do wypisania przekatnych
   let boardAll = boardRows ++ boardCols ++ boardDiagonals
-  let found = filter (not . null) (search wordsTab boardAll)
+  let found = filter (not . null) (search wordsTab boardAll) -- zakreslone pola
+  let foundConcat = concat found -- lista zakreślonych pół redukcja sublist
+ 
+  putStrLn "Given board:"
+  putStrLn (printBoardInit boardRows)
+  
   putStrLn "Result:"
-  -- boardRows ma elementy trzymane wierszami, nie trzeba sortować
-  print (reduceSame boardRows found)
   
-  
+  let boardRowsCleaned = reduceMarkedInBoard foundConcat boardRows
+  putStrLn (printBoardInit boardRowsCleaned)
+  putStrLn "Bye!"
   
