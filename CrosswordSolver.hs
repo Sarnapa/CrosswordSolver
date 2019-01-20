@@ -82,11 +82,11 @@ search [] _ = []
 search (x:xs) board = searchWord x board ++ search xs board
 
 -- Wyszukiwanie zakreślonych pół, zastępywanie ich domyślnym znaczkiem
-{-
-reduceMarked :: Eq b => [[(Char,b)]] -> [[(Char,b)]] -> [Char] 
-reduceMarked [] _ = []
-reduceMarked boardrows foundchars =  firsts ((concat boardrows) \\ (concat foundchars))
--}
+
+reduceToText :: Eq b => [[(Char,b)]] -> [(Char,b)] -> [Char] 
+reduceToText [] _ = []
+reduceToText boardrows foundchars =  firsts ((concat boardrows) \\ foundchars)
+
 
 --Zamien znak-pole jesli na liscie
 reduceMarkedInRowHelp1 :: [(Char, Pos)] -> (Char, Pos) -> (Char, Pos)
@@ -153,17 +153,24 @@ main = do
   let boardReversedRows = reverse boardRows
   let boardReversedCols = getReversedCols boardCols
   let boardDiagonals = getBoardDiagonalsInit boardRows boardCols boardRowsCount boardColumnsCount ++ getBoardDiagonalsInit boardReversedRows boardReversedCols boardRowsCount boardColumnsCount
+
   -- do wypisania przekatnych
   let boardAll = boardRows ++ boardCols ++ boardDiagonals
-  let found = filter (not . null) (search wordsTab boardAll) -- zakreslone pola
-  let foundConcat = concat found -- lista zakreślonych pół redukcja sublist
+  
+  let markedFields_ = filter (not . null) (search wordsTab boardAll) -- zakreslone pola
+
+  let markedFields = deduplicate (concat markedFields_) -- lista zakreślonych pół redukcja sublist, po deduplikacji w celu zwiększenia wydajności
  
   putStrLn "Given board:"
   putStrLn (printBoardInit boardRows)
   
   putStrLn "Result:"
   
-  let boardRowsCleaned = reduceMarkedInBoard foundConcat boardRows
+  let boardRowsCleaned = reduceMarkedInBoard markedFields boardRows
   putStrLn (printBoardInit boardRowsCleaned)
-  putStrLn "Bye!"
+  
+  putStrLn "The word is:"
+  putStrLn (reduceToText boardRows markedFields)
+  
+  putStrLn "\nBye!"
   
