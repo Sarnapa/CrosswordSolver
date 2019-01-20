@@ -1,4 +1,5 @@
 import System.Environment
+import Data.List
 
 -- Pozycja na planszy
 type Pos = (Int, Int)
@@ -54,6 +55,24 @@ getReversedCols :: [[(Char, Pos)]] -> [[(Char, Pos)]]
 getReversedCols [] = []
 getReversedCols (col:cols) = reverse col : getReversedCols cols
 
+-- Szukanko
+firsts :: [(a,b)] -> [a]
+firsts ps = [x | (x,_) <- ps]
+
+substrIdx :: Eq a => [a] -> [(a, b)] -> [(a, b)]
+substrIdx _ [] = []
+substrIdx sub str = case (findIndex (isPrefixOf sub) (tails (firsts str))) of
+        Just n -> (drop n (take (n + length sub) str))
+        Nothing -> []
+        
+searchWord :: [Char] -> [[(Char,b)]] -> [[(Char,b)]]
+searchWord _ [] = []
+searchWord word board = map (substrIdx word) board
+
+search :: [[Char]] -> [[(Char,b)]] -> [[(Char,b)]]
+search [] _ = []
+search (x:xs) board = searchWord x board ++ search xs board
+
 main = do
   putStrLn "Welcome to CrosswordSolver"
 
@@ -79,5 +98,7 @@ main = do
   let boardDiagonals = getBoardDiagonalsInit boardRows boardCols boardRowsCount boardColumnsCount ++ getBoardDiagonalsInit boardReversedRows boardReversedCols boardRowsCount boardColumnsCount
   -- do wypisania przekatnych
   mapM_ print boardDiagonals
-
+  let boardAll = boardRows ++ boardCols ++ boardDiagonals
+  let found = filter (not . null) (search wordsTab boardAll)
+  print found
   putStrLn "Result:"
