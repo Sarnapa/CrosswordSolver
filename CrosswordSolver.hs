@@ -49,14 +49,10 @@ getBoardDiagonals lettersMatrix letterIdx limit =
 getBoardDiagonalsInit :: [[(Char, Pos)]] -> [[(Char, Pos)]] -> Int -> Int -> [[(Char, Pos)]]
 getBoardDiagonalsInit rows cols rowsCount colsCount = getBoardDiagonals rows 0 colsCount ++ getBoardDiagonals cols 1 rowsCount
 
--- Odwracanie przekatnych "z gory" na te "z dolu"
-getBoardDownDiagonals :: [[(Char, Pos)]] -> [[(Char, Pos)]]
-getBoardDownDiagonals [] = []
-getBoardDownDiagonals (diagonal:diagonals) =
-  if length(diagonal) /= 1 then
-    reverse diagonal : getBoardDownDiagonals diagonals
-  else
-    getBoardDownDiagonals diagonals
+-- Odwracanie kolejnosci liter w kolumnach
+getReversedCols :: [[(Char, Pos)]] -> [[(Char, Pos)]]
+getReversedCols [] = []
+getReversedCols (col:cols) = reverse col : getReversedCols cols
 
 main = do
   putStrLn "Welcome to CrosswordSolver"
@@ -78,9 +74,9 @@ main = do
   let boardColumnsCount = length(boardRows !! 0)
   let boardCols = getBoardColumnsInit boardRows boardColumnsCount
 
-  let boardUpDiagonals = getBoardDiagonalsInit boardRows boardCols boardRowsCount boardColumnsCount
-  let boardDownDiagonals = getBoardDownDiagonals boardUpDiagonals
-  let boardDiagonals = boardUpDiagonals ++ boardDownDiagonals
+  let boardReversedRows = reverse boardRows
+  let boardReversedCols = getReversedCols boardCols
+  let boardDiagonals = getBoardDiagonalsInit boardRows boardCols boardRowsCount boardColumnsCount ++ getBoardDiagonalsInit boardReversedRows boardReversedCols boardRowsCount boardColumnsCount
   -- do wypisania przekatnych
   mapM_ print boardDiagonals
 
