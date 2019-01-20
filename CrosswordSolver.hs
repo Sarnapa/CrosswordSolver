@@ -45,9 +45,18 @@ getBoardDiagonals lettersMatrix letterIdx limit =
   else
     []
 
--- Plansza jako zbiór przekątnych (z kolumn zbieramy od 1, zeby nie powtarzala sie glowna przekatna)
+-- Plansza jako zbiór przekątnych (z kolumn zbieramy od 1, zeby nie powtarzala sie glowna przekatna) - przekatne "z gory"
 getBoardDiagonalsInit :: [[(Char, Pos)]] -> [[(Char, Pos)]] -> Int -> Int -> [[(Char, Pos)]]
 getBoardDiagonalsInit rows cols rowsCount colsCount = getBoardDiagonals rows 0 colsCount ++ getBoardDiagonals cols 1 rowsCount
+
+-- Odwracanie przekatnych "z gory" na te "z dolu"
+getBoardDownDiagonals :: [[(Char, Pos)]] -> [[(Char, Pos)]]
+getBoardDownDiagonals [] = []
+getBoardDownDiagonals (diagonal:diagonals) =
+  if length(diagonal) /= 1 then
+    reverse diagonal : getBoardDownDiagonals diagonals
+  else
+    getBoardDownDiagonals diagonals
 
 main = do
   putStrLn "Welcome to CrosswordSolver"
@@ -68,9 +77,11 @@ main = do
   let boardRowsCount = length(boardRows)
   let boardColumnsCount = length(boardRows !! 0)
   let boardCols = getBoardColumnsInit boardRows boardColumnsCount
-  let boardDiagonals = getBoardDiagonalsInit boardRows boardCols boardRowsCount boardColumnsCount
 
+  let boardUpDiagonals = getBoardDiagonalsInit boardRows boardCols boardRowsCount boardColumnsCount
+  let boardDownDiagonals = getBoardDownDiagonals boardUpDiagonals
+  let boardDiagonals = boardUpDiagonals ++ boardDownDiagonals
   -- do wypisania przekatnych
-  -- mapM_ print boardDiagonals
+  mapM_ print boardDiagonals
 
   putStrLn "Result:"
